@@ -1,9 +1,11 @@
 package websocket
 
 import (
-	"backend/internal/room"
 	"log"
 	"net/http"
+	"strings"
+
+	"backend/internal/room"
 
 	"github.com/gorilla/websocket"
 )
@@ -19,7 +21,13 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	roomID := r.URL.Path[len("/ws/"):]
+	roomID := strings.TrimPrefix(r.URL.Path, "/ws/")
+	if roomID == "" {
+		log.Println("Invalid room ID")
+		conn.Close()
+		return
+	}
+
 	rm := room.GetOrCreateRoom(roomID)
 
 	client := room.NewClient(conn, rm)
@@ -28,4 +36,3 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	go client.Read()
 	go client.Write()
 }
-
